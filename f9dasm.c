@@ -4583,65 +4583,68 @@ while (fgets(szBuf, sizeof(szBuf), fp))
           if (commentlines[nScanned])   /* if comment line is already there  */
             {
             int nLen = strlen(commentlines[nScanned]) + strlen(p) + 6;
-            commentlines[nScanned] = realloc(commentlines[nScanned], nLen);
-            if (commentlines[nScanned])
-              {
-              if ((nType == infoPrepend) ||
-                  (nType == infoPrepComm))
+            char* new_commentline = realloc(commentlines[nScanned], nLen);
+            if (NULL == new_commentline)
+            {
+                printf("failed to realloc commentline\n");
+                exit(1);
+            }
+            commentlines[nScanned] = new_commentline;
+            if ((nType == infoPrepend) ||
+                (nType == infoPrepComm))
+            {
+            int prepcomm = 0;       /* prepend comment char necessary    */
+                                    /* if that was an INSERT or PREPEND  */
+            if (commentlines[nScanned][0] == (char)0xff)
+                {                     /* remove the INSERT marker          */
+                char *cw = commentlines[nScanned];
+                while (*cw)
                 {
-                int prepcomm = 0;       /* prepend comment char necessary    */
-                                        /* if that was an INSERT or PREPEND  */
-                if (commentlines[nScanned][0] == (char)0xff)
-                  {                     /* remove the INSERT marker          */
-                  char *cw = commentlines[nScanned];
-                  while (*cw)
-                    {
-                    *cw = *(cw + 1);
-                    cw++;
-                    }
-                  }
-                else if ((commentlines[nScanned][0]) &&
-                         (commentlines[nScanned][0] != '\n'))
-                  prepcomm = 2;
-                                        /* position behind string            */
-                q = commentlines[nScanned] + strlen(commentlines[nScanned]);
-                r = q + strlen(p) + 1 + prepcomm;
-                if (*p)                 /* if there's a text,                */
-                  {
-                  if (nType == infoPrepend)
-                    r += 1;             /* add space for 0xff                */
-                  }
-                                        /* make space for new string         */
-                while (q >= commentlines[nScanned])
-                  *r-- = *q--;
-                q++;                    /* advance to start of buffer        */
-                if (*p)                 /* if there's a text                 */
-                  {
-                  if (nType == infoPrepend)
-                    *q++ = (char)0xFF;  /* prepend a "No comment char" marker*/
-                  }
+                *cw = *(cw + 1);
+                cw++;
+                }
+                }
+            else if ((commentlines[nScanned][0]) &&
+                        (commentlines[nScanned][0] != '\n'))
+                prepcomm = 2;
+                                    /* position behind string            */
+            q = commentlines[nScanned] + strlen(commentlines[nScanned]);
+            r = q + strlen(p) + 1 + prepcomm;
+            if (*p)                 /* if there's a text,                */
+                {
+                if (nType == infoPrepend)
+                r += 1;             /* add space for 0xff                */
+                }
+                                    /* make space for new string         */
+            while (q >= commentlines[nScanned])
+                *r-- = *q--;
+            q++;                    /* advance to start of buffer        */
+            if (*p)                 /* if there's a text                 */
+                {
+                if (nType == infoPrepend)
+                *q++ = (char)0xFF;  /* prepend a "No comment char" marker*/
+                }
 
-                while (*p)              /* then copy in the new string       */
-                  *q++ = *p++;
-                *q++ = '\n';            /* and append a newline              */
-                if (prepcomm)           /* if that was a comment and needs   */
-                  {                     /* a comment character now,          */
-                  *q++ = cCommChar;     /* prepend comment char              */
-                  *q++ = ' ';
-                  }
+            while (*p)              /* then copy in the new string       */
+                *q++ = *p++;
+            *q++ = '\n';            /* and append a newline              */
+            if (prepcomm)           /* if that was a comment and needs   */
+                {                     /* a comment character now,          */
+                *q++ = cCommChar;     /* prepend comment char              */
+                *q++ = ' ';
                 }
-              else                      /* if INSERT or COMMENT              */
+            }
+            else                      /* if INSERT or COMMENT              */
+            {
+            strcat(commentlines[nScanned], "\n");
+            if (strlen(p))          /* if there's data,                  */
                 {
-                strcat(commentlines[nScanned], "\n");
-                if (strlen(p))          /* if there's data,                  */
-                  {
-                  if (nType == infoComment)
-                    sprintf(commentlines[nScanned] + strlen(commentlines[nScanned]),
-                            "%c ", cCommChar);
-                  strcat(commentlines[nScanned], p);
-                  }
+                if (nType == infoComment)
+                sprintf(commentlines[nScanned] + strlen(commentlines[nScanned]),
+                        "%c ", cCommChar);
+                strcat(commentlines[nScanned], p);
                 }
-              }
+            }
             }
           else                          /* if this is fresh,                 */
             {
@@ -4772,36 +4775,39 @@ while (fgets(szBuf, sizeof(szBuf), fp))
           {
           int nBlanks = 41;
           int nLen = strlen(lcomments[nScanned]) + strlen(p) + nBlanks + 4;
-          lcomments[nScanned] = realloc(lcomments[nScanned], nLen);
-          if (lcomments[nScanned])
-            {
-            if (nType == infoLComment)  /* if LCOMMENT                       */
+          char* new_lcomments = realloc(lcomments[nScanned], nLen);
+          if (NULL == new_lcomments)
+          {
+              printf("failed to realloc lcomments\n");
+              exit(1);
+          }
+          lcomments[nScanned] = new_lcomments;
+          if (nType == infoLComment)  /* if LCOMMENT                       */
               {
               q = lcomments[nScanned] + strlen(lcomments[nScanned]);
               *q++ = '\n';
               for (; nBlanks > 0; nBlanks--)
-                *q++ = ' ';
+              *q++ = ' ';
               *q++ = cCommChar;
               *q++ = ' ';
               strcpy(q, p);
               }
-            else                        /* if PREPLCOMM                      */
+          else                        /* if PREPLCOMM                      */
               {                         /* position behind string            */
               q = lcomments[nScanned] + strlen(lcomments[nScanned]);
               r = q + strlen(p) + nBlanks + 3;
-                                        /* make space for new string         */
+                                      /* make space for new string         */
               while (q >= lcomments[nScanned])
-                *r-- = *q--;
+              *r-- = *q--;
               q++;                      /* advance to start of buffer        */
               strcpy(q, p);             /* copy in the string                */
               q += strlen(p);           /* advance behind it                 */
               *q++ = '\n';
               for (; nBlanks > 0; nBlanks--)
-                *q++ = ' ';
+              *q++ = ' ';
               *q++ = cCommChar;
               *q++ = ' ';
               }
-            }
           }
         else
           lcomments[nScanned] = strdup(p);
@@ -4883,9 +4889,14 @@ while (fgets(szBuf, sizeof(szBuf), fp))
           *szPrepend = '\0';
         }
       else
-        szPrepend = realloc(szPrepend, strlen(szPrepend) + strlen(p) + 4);
-      if (szPrepend)
         {
+        char* new_szprepend = realloc(szPrepend, strlen(szPrepend) + strlen(p) + 4);
+        if (NULL == new_szprepend)
+        {
+            printf("failed to realloc szprepend\n");
+            exit(1);
+        }
+        szPrepend = new_szprepend;
         size_t len = 0;
         if (nType == infoPrepComm ||    /* if prepending line                */
             nType == infoPrepend)
@@ -5347,7 +5358,13 @@ for (pc = 0x0000; pc <= 0xFFFF; pc++)
       {
       int nOff;
       if (q[1] == '$')
-        sscanf(q + 2, "%x", &nOff);
+      {
+          int err = sscanf(q + 2, "%x", &nOff);
+          if (err <= 0)
+          {
+              printf("sscanf failed\n");
+          }
+      }
       else if (q[1] == '%')
         {
         int i = 2;
@@ -5361,7 +5378,13 @@ for (pc = 0x0000; pc <= 0xFFFF; pc++)
       else if (q[1] == '\'')
         nOff = q[2];
       else
-        sscanf(q + 1, "%d", &nOff);
+      {
+          int err = sscanf(q + 1, "%d", &nOff);
+          if (err <= 0)
+          {
+              printf("sscanf failed\n");
+          }
+      }
       if (*q == '+')
         nOff = -nOff;
       ATTRBYTE(pc) &= ~(AREATYPE_LABEL | AREATYPE_ULABEL);
