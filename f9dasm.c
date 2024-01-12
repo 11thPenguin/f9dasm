@@ -3391,7 +3391,7 @@ int nAdd = 0;
 if (!value)
 {
     usage(1);
-    return;
+    return nAdd;
 }
 
 for (j = 0; Options[j].name; ++j)
