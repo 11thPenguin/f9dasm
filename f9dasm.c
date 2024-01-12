@@ -3387,6 +3387,13 @@ int ParseOption(char *name, char *value)
 int j;
 int nAdd = 0;
 
+// JASFIX: This is horrible, but fixes some warnings.
+if (!value)
+{
+    usage(1);
+    return;
+}
+
 for (j = 0; Options[j].name; ++j)
   if (!strcmp(name, Options[j].name))
     {
@@ -3398,27 +3405,19 @@ switch (j)
   {
   case OPTION_BEGIN :
     nAdd++;
-    if (!value)
-      usage(1);
     begin = strtoul(value, NULL, 16);
     break;
   case OPTION_END :
     nAdd++;
-    if (!value)
-      usage(1);
     end = strtoul(value, NULL, 16);
     break;
   case OPTION_OFFSET :
     nAdd++;
-    if (!value)
-      usage(1);
     offset = strtoul(value, NULL, 16);
     lastload = (unsigned)(offset - 1);
     break;
   case OPTION_OUT :
     nAdd++;
-    if (!value)
-      usage(1);
     if (outname)
       free(outname);
     outname = strdup(value);
@@ -3518,8 +3517,6 @@ switch (j)
     break;
   case OPTION_INFO :
     nAdd++;
-    if (!value)
-      usage(1);
     if (infoname)
       free(infoname);
     infoname = strdup(value);
@@ -3527,8 +3524,7 @@ switch (j)
   case OPTION_CCHAR :
   case OPTION_LDCHAR :
     nAdd++;
-    if ((!value) ||
-      (strlen(value) > 1))
+    if (strlen(value) > 1)
       usage(1);
     if (j == OPTION_CCHAR)
       cCommChar = value[0];
